@@ -1,220 +1,289 @@
 /**
- * @return {undefined}
+ * Initialize splash screen
  */
 function initSplash() {
-  /** @type {string} */
   gameState = "splash";
-  if (allowSound) {
-    if (!muted) {
-      music.play();
-    }
+  
+  if (allowSound && !muted) {
+    music.play();
   }
+  
   initStartScreen();
 }
+
 /**
- * @return {undefined}
+ * Initialize start screen
  */
 function initStartScreen() {
-  /** @type {string} */
+  // Hide more games button
   document.getElementById("moregame").style.display = "none";
-  /** @type {string} */
+  
+  // Set game state and reset score
   gameState = "start";
-  /** @type {number} */
   gameScore = 0;
+  
+  // Add mute button hit area
   userInput.addHitArea("mute", butEventHandler, null, {
     type: "rect",
     aRect: [336, 0, canvas.width, 48]
   }, true);
+  
+  // Create background
   background = new Elements.Background(assetLib.getData("background"), canvas.width, canvas.height);
-  var cols = {
+  
+  // Create button data
+  var playButtonData = {
     oImgData: assetLib.getData("playBut"),
     aPos: [canvas.width / 2, 370]
   };
-  var y = {
+  
+  var moreGamesButtonData = {
     oImgData: assetLib.getData("moreGamesBut"),
     aPos: [canvas.width / 2, 480]
   };
+  
+  // Add button hit areas
   userInput.addHitArea("startGame", butEventHandler, null, {
     type: "image",
-    oImageData: cols.oImgData,
-    aCentrePos: cols.aPos
+    oImageData: playButtonData.oImgData,
+    aCentrePos: playButtonData.aPos
   });
+  
   userInput.addHitArea("moreGames", butEventHandler, null, {
     type: "image",
-    oImageData: y.oImgData,
-    aCentrePos: y.aPos
+    oImageData: moreGamesButtonData.oImgData,
+    aCentrePos: moreGamesButtonData.aPos
   });
-  /** @type {Array} */
-  var row = new Array(cols, y);
-  panel = new Elements.Panel(assetLib.getData("panels"), assetLib.getData("thinNumbers"), assetLib.getData("fatNumbers"), gameState, row, canvas.width, canvas.height);
+  
+  // Create panel with buttons
+  var buttons = [playButtonData, moreGamesButtonData];
+  panel = new Elements.Panel(
+    assetLib.getData("panels"), 
+    assetLib.getData("thinNumbers"), 
+    assetLib.getData("fatNumbers"), 
+    gameState, 
+    buttons, 
+    canvas.width, 
+    canvas.height
+  );
   panel.startTween();
-  /** @type {Array} */
-  aDots = new Array;
-  /** @type {number} */
-  var d = 0;
-  for (; 6 > d; d++) {
-    var face = new Elements.Dot(assetLib.getData("dot"), assetLib.getData("pop"), d, d, canvas.width, canvas.height);
-    /** @type {number} */
-    face.x = Math.random() * canvas.width;
-    /** @type {number} */
-    face.y = Math.random() * canvas.height;
-    aDots.push(face);
+  
+  // Create decorative dots for start screen
+  aDots = [];
+  for (var i = 0; i < 6; i++) {
+    var dot = new Elements.Dot(assetLib.getData("dot"), assetLib.getData("pop"), i, i, canvas.width, canvas.height);
+    dot.x = Math.random() * canvas.width;
+    dot.y = Math.random() * canvas.height;
+    aDots.push(dot);
   }
-  /** @type {number} */
-  previousTime = (new Date).getTime();
+  
+  // Set previous time for delta calculation
+  previousTime = new Date().getTime();
+  
+  // Start update loop
   updateStartScreenEvent();
 }
 /**
- * @return {?}
+ * Initialize pre-game (tutorial) state
+ * @return {undefined}
  */
 function initPreGame() {
-  /** @type {string} */
   gameState = "tutorial";
-  /** @type {number} */
-  var i = 0;
-  for (; i < aTutorials.length; i++) {
-    if (aTutorials[i].gameNum == gameNum && !aTutorials[i].shown) {
+  
+  // Check if tutorial should be shown for current game number
+  for (var i = 0; i < aTutorials.length; i++) {
+    if (aTutorials[i].gameNum === gameNum && !aTutorials[i].shown) {
+      // Create background
       background = new Elements.Background(assetLib.getData("background"), canvas.width, canvas.height);
+      
+      // Add continue button hit area
       userInput.addHitArea("continue", butEventHandler, null, {
         type: "rect",
         aRect: [100, 265, 220, 345]
       });
-      var cols = {
+      
+      // Create continue button data
+      var continueButtonData = {
         oImgData: assetLib.getData("playBut"),
         aPos: [canvas.width / 2, 465]
       };
+      
+      // Add continue button hit area
       userInput.addHitArea("continue", butEventHandler, null, {
         type: "image",
-        oImageData: cols.oImgData,
-        aCentrePos: cols.aPos
+        oImageData: continueButtonData.oImgData,
+        aCentrePos: continueButtonData.aPos
       });
-      /** @type {Array} */
-      var row = new Array(cols);
-      return panel = new Elements.Panel(assetLib.getData("panels"), assetLib.getData("thinNumbers"), assetLib.getData("fatNumbers"), aTutorials[i].panelType, row, canvas.width, canvas.height), panel.startTween(), previousTime = (new Date).getTime(), updateTutorialEvent(), void 0;
+      
+      // Create panel with continue button
+      var buttons = [continueButtonData];
+      panel = new Elements.Panel(
+        assetLib.getData("panels"), 
+        assetLib.getData("thinNumbers"), 
+        assetLib.getData("fatNumbers"), 
+        aTutorials[i].panelType, 
+        buttons, 
+        canvas.width, 
+        canvas.height
+      );
+      
+      // Start panel animation and tutorial update loop
+      panel.startTween();
+      previousTime = new Date().getTime();
+      updateTutorialEvent();
+      return;
     }
   }
+  
+  // If no tutorial needed, go directly to game
   initGame();
 }
 /**
+ * Initialize game state
  * @return {undefined}
  */
 function initGame() {
-  /** @type {string} */
+  // Set game state
   gameState = "game";
+  
+  // Set music volume
   if (allowSound) {
     music.volume(0.5);
   }
+  
+  // Create background
   background = new Elements.Background(assetLib.getData("background"), canvas.width, canvas.height);
+  
+  // Add pause button hit area
   userInput.addHitArea("pause", butEventHandler, null, {
     type: "rect",
     aRect: [294, 0, 336, 48]
   }, true);
+  
+  // Create HUD
   hud = new Elements.Hud(assetLib.getData("hud"), assetLib.getData("thinNumbers"), assetLib.getData("fatNumbers"), canvas.width, canvas.height);
-  /** @type {Array} */
-  aDots = new Array;
-  /** @type {Array} */
-  aSelected = new Array;
-  /** @type {number} */
+  
+  // Initialize game variables
+  aDots = [];
+  aSelected = [];
   gameTime = 60;
-  /** @type {number} */
   gameScore = 0;
-  /** @type {boolean} */
   blockTap = false;
-  /** @type {number} */
   longestChain = 0;
-  /** @type {number} */
   balloonsPopped = 0;
-  /** @type {null} */
   lastSelectedDot = null;
-  /** @type {number} */
-  var arg = 0;
-  for (; 42 > arg; arg++) {
-    var seg = new Elements.Dot(assetLib.getData("dot"), assetLib.getData("pop"), arg, getNewDotType(), canvas.width, canvas.height);
-    /** @type {number} */
-    seg.targX = Math.round(62 * (arg % 6) + 36);
-    /** @type {number} */
-    seg.targY = Math.round(getYPosFromId(arg));
-    seg.fall();
+  
+  // Create dots (6 columns x 7 rows = 42 dots)
+  for (var i = 0; i < 42; i++) {
+    var dot = new Elements.Dot(assetLib.getData("dot"), assetLib.getData("pop"), i, getNewDotType(), canvas.width, canvas.height);
+    
+    // Set target position for dot
+    dot.targX = Math.round(62 * (i % 6) + 36);
+    dot.targY = Math.round(getYPosFromId(i));
+    
+    // Animate dot falling to position
+    dot.fall();
+    
+    // Add hit area for dot
     userInput.addHitArea("dotHit", butEventHandler, {
-      id: arg,
+      id: i,
       isDraggable: true
     }, {
       type: "rect",
-      aRect: [seg.x - 22, seg.targY - 22, seg.x + 22, seg.targY + 22]
+      aRect: [dot.x - 22, dot.targY - 22, dot.x + 22, dot.targY + 22]
     });
-    aDots.push(seg);
+    
+    aDots.push(dot);
   }
+  
+  // Start background scrolling
   background.startScroll(20);
+  
+  // Add mouse/touch up hit area for entire canvas
   userInput.addHitArea("mouseUp", butEventHandler, {
     multiTouch: true
   }, {
     type: "rect",
     aRect: [0, 0, canvas.width, canvas.height]
   });
-  /** @type {number} */
-  previousTime = (new Date).getTime();
+  
+  // Set previous time for delta calculation
+  previousTime = new Date().getTime();
+  
+  // Start game update loop
   updateGameEvent();
 }
 /**
- * @param {?} dataAndEvents
- * @param {Object} details
+ * Handle button and game events
+ * @param {string} eventType - Type of event
+ * @param {Object} details - Event details
  * @return {undefined}
  */
-function butEventHandler(dataAndEvents, details) {
-  switch (dataAndEvents) {
+function butEventHandler(eventType, details) {
+  switch (eventType) {
     case "langSelect":
+      // Handle language selection
       console.log(details.lang);
       curLang = details.lang;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       userInput.removeHitArea("langSelect");
       initLoadAssets();
       break;
+      
     case "startGame":
+      // Handle game start
       playSound("click");
       userInput.removeHitArea("startGame");
       userInput.removeHitArea("moreGames");
       initPreGame();
       break;
+      
     case "moreGames":
+      // Handle more games button
       clickMore();
       break;
+      
     case "dotHit":
+      // Handle dot selection
       if (blockTap) {
         break;
       }
+      
       if (details.isBeingDragged) {
-        if (null == lastSelectedDot) {
+        // Handle dragging over dots
+        if (lastSelectedDot === null) {
           break;
         }
+        
+        // Try to select the dot
         lastSelectedDot = aDots[details.id].trySelect(lastSelectedDot);
-        /** @type {number} */
-        var x = -1;
-        /** @type {number} */
-        var len = 0;
-        for (; len < aSelected.length; len++) {
-          if (aSelected[len] == lastSelectedDot) {
-            /** @type {number} */
-            x = len;
+        
+        // Check if dot is already in selection
+        var selectedIndex = -1;
+        for (var i = 0; i < aSelected.length; i++) {
+          if (aSelected[i] === lastSelectedDot) {
+            selectedIndex = i;
           }
         }
-        if (-1 == x) {
+        // If dot is not in selection, add it
+        if (selectedIndex === -1) {
           aSelected.push(lastSelectedDot);
           playSound("drag");
         } else {
-          /** @type {number} */
-          len = x + 1;
-          for (; len < aSelected.length; len++) {
-            aSelected[len].unSelect();
-            aSelected.splice(len, 1);
-            len -= 1;
+          // Remove dots after the selected one from selection
+          var removeIndex = selectedIndex + 1;
+          while (removeIndex < aSelected.length) {
+            aSelected[removeIndex].unSelect();
+            aSelected.splice(removeIndex, 1);
+            // Don't increment removeIndex since we removed an element
           }
         }
       } else {
+        // Handle initial dot selection
         if (aDots[details.id].type < 6) {
           aDots[details.id].select();
           lastSelectedDot = aDots[details.id];
-          /** @type {Array} */
-          aSelected = new Array(lastSelectedDot);
+          aSelected = [lastSelectedDot];
           playSound("drag");
         }
       }
@@ -349,6 +418,7 @@ function butEventHandler(dataAndEvents, details) {
       toggleMute();
       break;
     case "pause":
+      ;
     case "resumeFromPause":
       playSound("click");
       toggleManualPause();
@@ -2145,14 +2215,15 @@ var requestAnimFrame = function () {
 }();
 var previousTime;
 /** @type {(HTMLElement|null)} */
-var canvasElement = document.getElementById("canvas");
-var context = canvasElement.getContext("2d");
-canvasElement.width = 383, canvasElement.height = 550;
-var canvasOffsetX;
-var canvasOffsetY;
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+canvas.width = 383, canvas.height = 550;
+var canvasX;
+var canvasY;
 var canvasScaleX;
 var canvasScaleY;
-var viewportDiv = document.getElementById("viewporter");
+/** @type {(HTMLElement|null)} */
+var div = document.getElementById("viewporter");
 var sound;
 var music;
 /** @type {boolean} */
@@ -2261,4 +2332,3 @@ var balloonsPopped;
 /** @type {number} */
 var highScore = 0;
 loadPreAssets();
-
